@@ -21,7 +21,7 @@
     --border: #2d2f34;
   }
   body { font-family: "Montserrat", sans-serif; background: var(--bg); color: var(--text); text-align: center; padding: 50px; transition: 0.3s; }
-  h1 { color: var(--accent); }
+  h1 { color: #ffffff; }
   
   .upload-box { border: 2px dashed var(--accent); border-radius: 12px; padding: 40px; max-width: 400px; margin: 20px auto; cursor: pointer; background: var(--box); transition: 0.3s; }
   .upload-box.dragover { border-color: #0096c7; }
@@ -43,7 +43,7 @@
 </head>
 <body>
 
-<h1>BackgroundDelete - Quitar Fondo</h1>
+<h1 id="mainTitle">BackgroundDelete - Quitar Fondo</h1>
 
 <div class="upload-box" id="dropZone">
   <p>Haz clic o arrastra tu imagen aquí</p>
@@ -155,6 +155,13 @@ removeBtn.addEventListener("click", async ()=>{
     alert("Error interno: "+err.message); 
   }
 });
+
+  const mainTitle = document.getElementById("mainTitle");
+mainTitle.style.cursor = "pointer"; // cambia el cursor para indicar que se puede hacer click
+mainTitle.addEventListener("click", () => {
+    location.reload();
+});
+
 </script>
 
 </body>
