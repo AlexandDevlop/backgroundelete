@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aldex Tools - Quitar Fondo</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --text: #111;
+    --box: #fff;
+    --accent: #0077b6;
+    --border: #d0d0d0;
+  }
+  body.dark {
+    --bg: #111418;
+    --text: #e0e0e0;
+    --box: #1c1f24;
+    --border: #2d2f34;
+  }
+  body { font-family: "Montserrat", sans-serif; background: var(--bg); color: var(--text); text-align: center; padding: 50px; transition: 0.3s; }
+  h1 { color: var(--accent); }
+  .upload-box { border: 2px dashed var(--accent); border-radius: 12px; padding: 40px; max-width: 400px; margin: 20px auto; cursor: pointer; background: var(--box); transition: 0.3s; }
+  .upload-box.dragover { border-color: #0096c7; }
+  .preview, #result { max-width: 90%; margin-top: 20px; border-radius: 8px; }
+  button { padding: 10px 20px; margin-top: 20px; border-radius: 8px; border: none; cursor: pointer; background: var(--accent); color: white; transition: 0.3s; }
+  button:hover { transform: scale(1.05); }
+  #modeToggle { position: fixed; top: 10px; right: 10px; border: 1.5px solid var(--accent); background: none; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>Aldex Tools - Quitar Fondo</h1>
+
+<div class="upload-box" id="dropZone">
+  <p>Haz clic o arrastra tu imagen aquí</p>
+  <input type="file" id="fileInput" accept="image/*" style="display:none;">
+  <img id="preview" class="preview" style="display:none;">
+</div>
+
+<button id="removeBtn">Quitar Fondo</button>
+<br>
+<img id="result">
+<br>
+<a id="downloadLink" style="display:none;"><button>Descargar Imagen</button></a>
+
+<button id="modeToggle">Modo Oscuro</button>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const dropZone = document.getElementById("dropZone");
+const preview = document.getElementById("preview");
+const resultImg = document.getElementById("result");
+const downloadLink = document.getElementById("downloadLink");
+const removeBtn = document.getElementById("removeBtn");
+const modeToggle = document.getElementById("modeToggle");
+
+// Tema
+if(localStorage.getItem("theme") === "dark"){ document.body.classList.add("dark"); modeToggle.textContent="Modo Claro"; }
+modeToggle.addEventListener("click",()=>{
+  document.body.classList.toggle("dark");
+  localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark":"light");
+  modeToggle.textContent = document.body.classList.contains("dark") ? "Modo Claro":"Modo Oscuro";
+});
+
+// Drag & drop
+dropZone.addEventListener("click",()=>fileInput.click());
+dropZone.addEventListener("dragover",e=>{ e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave",()=>{ dropZone.classList.remove("dragover"); });
+dropZone.addEventListener("drop",e=>{ 
+  e.preventDefault(); dropZone.classList.remove("dragover"); 
+  const file = e.dataTransfer.files[0];
+  if(file){ fileInput.files=e.dataTransfer.files; showPreview(file); } 
+});
+
+fileInput.addEventListener("change",e=>{ const file=e.target.files[0]; if(file) showPreview(file); });
+
+function showPreview(file){
+  const reader = new FileReader();
+  reader.onload=()=>{ preview.src=reader.result; preview.style.display="block"; }
+  reader.readAsDataURL(file);
+}
+
+// Quitar fondo
+removeBtn.addEventListener("click", async ()=>{
+  if(!fileInput.files.length) return alert("Selecciona una imagen primero");
+  const file=fileInput.files[0];
+  const formData=new FormData();
+  formData.append("image_file", file);
+
+  resultImg.src="";
+  downloadLink.style.display="none";
+
+  try{
+    const res=await fetch("/api/remove-bg",{ method:"POST", body:formData });
+    if(!res.ok){
+      let errText;
+      try{ errText=await res.json(); } catch{ errText=await res.text(); }
+      console.error("Error remove.bg:", errText);
+      return alert("Error al procesar la imagen: "+(errText.details||JSON.stringify(errText)));
+    }
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    resultImg.src=url;
+    downloadLink.href=url;
+    downloadLink.download="imagen_sin_fondo.png";
+    downloadLink.style.display="inline-block";
+  }catch(err){ console.error(err); alert("Error interno: "+err.message); }
+});
+</script>
+
+</body>
+</html>
